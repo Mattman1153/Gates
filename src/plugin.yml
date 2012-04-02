@@ -2,7 +2,7 @@ name: Gates
 main: net.kitecraft.tyrotoxism.gates.Gates
 author: Tyrotoxism
 website: http://kitecraft.net
-version: 1.0a
+version: 1.0b
 description: Create unbreakable gates
 commands:
   gates:
@@ -18,6 +18,7 @@ permissions:
       gates.create: true
       gates.use.*: true
       gates.destroy.*: true
+      gates.command.*: true
   gates.create:
     description: Grant access to create gates
     default: true
@@ -41,6 +42,11 @@ permissions:
     default: true
   gates.destroy.others:
     description: Grant access to destroy gates made by other players
+  gates.command.*:
+    description: Grant full access to the /gates command
+    children:
+      gates.command.reload: true
+      gates.command.version: true
   gates.command.reload:
     description: Grant access to reload the plugin using the /gates command
   gates.command.version:
