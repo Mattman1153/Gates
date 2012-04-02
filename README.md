@@ -67,7 +67,8 @@ No, not yet. I will try to find a solution.
 ### > > > gates.destroy.others
 **Description**: Grant access to destroy gates made by other players
 
-### > >
+### > > gates.command.*
+**Description**: Grant full access to the /gates command
 
 ### > > > gates.command.reload
 **Description**: Grant access to reload the plugin using the /gates command
@@ -80,3 +81,4 @@ No, not yet. I will try to find a solution.
 
 * Falsebook/Craftbook for the initial idea
 * KiteCraft in general
+
