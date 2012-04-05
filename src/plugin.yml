@@ -32,21 +32,33 @@ permissions:
     children:
       gates.use.self: true
       gates.use.others: true
+      gates.use.group.*: true
+      gates.use.player.*: true
   gates.use.self:
     description: Grant access to use gates made by yourself
     default: true
   gates.use.others:
     description: Grant access to use gates made by other players
+  gates.use.group.*:
+    description: Grant access to use gates in all groups
+  gates.use.player.*:
+    description: Grant access to use gates made by any player
   gates.destroy.*:
     description: Grant access to destroy all gates
     children:
       gates.destroy.self: true
       gates.destroy.others: true
+      gates.destroy.group.*: true
+      gates.destroy.player.*: true
   gates.destroy.self:
     description: Grant access to destroy gates made by yourself
     default: true
   gates.destroy.others:
     description: Grant access to destroy gates made by other players
+  gates.destroy.group.*:
+    description: Grant access to destroy gates in all groups
+  gates.destroy.player.*:
+    description: Grant access to destroy gates made by any player
   gates.command.*:
     description: Grant full access to the /gates command
     children:
