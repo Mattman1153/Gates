@@ -19,8 +19,10 @@ public class Gate {
     private boolean open, openCheck, runingTask;
     private int task;
     private Material material;
+    private String group;
+    private RedstoneState redstone;
 
-    public Gate(Gates plugin, Sign sign, OfflinePlayer owner) {
+    public Gate(Gates plugin, Sign sign, OfflinePlayer owner, String group, String redstone) {
         this.plugin = plugin;
         this.sign = sign;
         this.owner = owner;
@@ -28,6 +30,8 @@ public class Gate {
         this.openCheck = false;
         this.runingTask = false;
         this.task = 0;
+        this.group = group;
+        this.redstone = RedstoneState.getByState(redstone);
 
         this.findBlocks();
         this.updateSign();
@@ -53,6 +57,30 @@ public class Gate {
         return this.material;
     }
 
+    public String getGroup() {
+        return this.group;
+    }
+
+    public RedstoneState getRedstoneState() {
+        return this.redstone;
+    }
+
+    public String getConfigString() {
+        return String.format("%s,%s,%s,%s,%s,%s,%s", this.sign.getWorld().getName(), Integer.toString(this.sign.getX()), Integer.toString(this.sign.getY()), Integer.toString(this.sign.getZ()), this.owner.getName(), this.group, this.redstone.getState());
+    }
+
+    public void setOwner(OfflinePlayer owner) {
+        this.owner = owner;
+    }
+
+    public void setRedstoneState(RedstoneState state) {
+        this.redstone = state;
+    }
+
+    public void setGroup(String group) {
+        this.group = group;
+    }
+
     public boolean isOpen() {
         if (!this.openCheck) {
             this.openCheck = true;
@@ -75,76 +103,115 @@ public class Gate {
         return this.runingTask;
     }
 
-    public void setTask(int task) {
-        this.task = task;
-        this.runingTask = true;
-    }
-
-    public void stopTask() {
-        this.plugin.getServer().getScheduler().cancelTask(this.task);
-        this.runingTask = false;
-    }
-
     public void updateSign() {
-        this.sign.setLine(0, "");
-        this.sign.setLine(1, "[Gate]");
-        this.sign.setLine(2, this.owner.getName());
-        this.sign.setLine(3, "");
-
+        this.sign.setLine(0, "[Gate]");
+        this.sign.setLine(1, this.owner.getName());
+        this.sign.setLine(2, this.group);
+        this.sign.setLine(3, this.redstone.getState());
         this.sign.update();
     }
 
     public void toggle() {
-        boolean finished = true;
-        List<Block> blocks = new ArrayList<Block>();
+        if (this.runingTask) { return; }
 
-        for (Block block : this.blocks) {
-            if (((this.isOpen() && !block.getType().equals(this.material)) || (!this.isOpen() && block.getType().equals(this.material))) && block.getRelative(BlockFace.UP).getType().equals(this.material)) {
-                blocks.add(block);
-            }
+        if (this.plugin.getGatesConfig().getBoolean("config.global.find-blocks-on-use", this.group)) {
+            this.findBlocks();
         }
 
-        int y = this.isOpen() ? 0 : this.blocks.get(0).getWorld().getMaxHeight();
+        if (this.isReal()) {
+            int delay = this.plugin.getGatesConfig().getInt("config.global.delay", this.group);
+            int ticks = this.plugin.getGatesConfig().getInt("config.global.ticks", this.group);
 
-        for (Block block : blocks) {
-            if (this.isOpen() ? block.getY() > y : block.getY() < y) {
-                y = block.getY();
-            }
-        }
+            if (ticks == 0) {
+                Runnable task = new Runnable() {
+                    @Override
+                    public void run() {
+                        if (Gate.this.isOpen()) {
+                            for (Block block : Gate.this.blocks) {
+                                block.setType(Gate.this.material);
+                            }
+                        } else {
+                            List<Block> blocks = new ArrayList<Block>();
 
-        for (Block block : blocks.toArray(new Block[blocks.size()])) {
-            if (block.getY() != y) {
-                blocks.remove(block);
-            }
-        }
+                            for (Block block : Gate.this.blocks) {
+                                if (block.getRelative(BlockFace.UP).getType().equals(Gate.this.material)) {
+                                    blocks.add(block);
+                                }
+                            }
 
-        if (!blocks.isEmpty()) {
-            if (this.isOpen()) {
-                for (Block block : blocks) {
-                    block.setType(this.material);
-                }
+                            for (Block block : blocks) {
+                                block.setType(Material.AIR);
+                            }
+                        }
 
-                for (Block block : this.blocks) {
-                    if (block.getType().equals(Material.AIR)) {
-                        finished = false;
+                        Gate.this.open = !Gate.this.open;
                     }
-                }
+                };
+
+                this.plugin.getServer().getScheduler().scheduleSyncDelayedTask(this.plugin, task, delay);
             } else {
-                for (Block block : blocks) {
-                    block.setType(Material.AIR);
-                }
+                Runnable task = new Runnable() {
+                    @Override
+                    public void run() {
+                        boolean finished = true;
+                        List<Block> blocks = new ArrayList<Block>();
 
-                for (Block block : this.blocks) {
-                    if (block.getType().equals(this.material) && block.getRelative(BlockFace.UP).getType().equals(this.material)) {
-                        finished = false;
+                        for (Block block : Gate.this.blocks) {
+                            if (((Gate.this.isOpen() && !block.getType().equals(Gate.this.material)) || (!Gate.this.isOpen() && block.getType().equals(Gate.this.material))) && block.getRelative(BlockFace.UP).getType().equals(Gate.this.material)) {
+                                blocks.add(block);
+                            }
+                        }
+
+                        int y = Gate.this.isOpen() ? 0 : Gate.this.blocks.get(0).getWorld().getMaxHeight();
+
+                        for (Block block : blocks) {
+                            if (Gate.this.isOpen() ? block.getY() > y : block.getY() < y) {
+                                y = block.getY();
+                            }
+                        }
+
+                        for (Block block : blocks.toArray(new Block[blocks.size()])) {
+                            if (block.getY() != y) {
+                                blocks.remove(block);
+                            }
+                        }
+
+                        if (!blocks.isEmpty()) {
+                            if (Gate.this.isOpen()) {
+                                for (Block block : blocks) {
+                                    block.setType(Gate.this.material);
+                                }
+
+                                for (Block block : Gate.this.blocks) {
+                                    if (block.getType().equals(Material.AIR)) {
+                                        finished = false;
+                                    }
+                                }
+                            } else {
+                                for (Block block : blocks) {
+                                    block.setType(Material.AIR);
+                                }
+
+                                for (Block block : Gate.this.blocks) {
+                                    if (block.getType().equals(Gate.this.material) && block.getRelative(BlockFace.UP).getType().equals(Gate.this.material)) {
+                                        finished = false;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (finished) {
+                            Gate.this.open = !Gate.this.open;
+                            Gate.this.plugin.getServer().getScheduler().cancelTask(Gate.this.task);
+                            Gate.this.runingTask = false;
+                        }
                     }
-                }
-            }
-        }
+                };
 
-        if (finished) {
-            this.open = !this.open;
-            this.stopTask();
+                this.task = this.plugin.getServer().getScheduler().scheduleSyncRepeatingTask(this.plugin, task, delay, ticks);
+                this.runingTask = true;
+            }
+
         }
     }
 
@@ -164,7 +231,7 @@ public class Gate {
 
                     boolean exists = false;
 
-                    if (this.plugin.getConfig().getBoolean("config.gate.force-one-sign", true)) {
+                    if (this.plugin.getGatesConfig().getBoolean("config.global.force-one-sign", this.group)) {
                         for (Gate gate : this.plugin.getGates()) {
                             if (gate.getBlocks().contains(relative)) {
                                 exists = true;

@@ -2,14 +2,19 @@ name: Gates
 main: net.kitecraft.tyrotoxism.gates.Gates
 author: Tyrotoxism
 website: http://kitecraft.net
-version: 1.0b
+version: 1.1a
 description: Create unbreakable gates
 commands:
   gates:
     description: Manage the plugin
     usage: |
-      /<command> reload
-      /<command> version
+      §3/<command> reload
+      §3/<command> version
+      §3/<command> setowner §e[player]
+      §3/<command> setgroup §e[group]
+      §3/<command> setredstone on
+      §3/<command> setredstone off
+      §3/<command> setredstone toggle
 permissions:
   gates.*:
     description: Grant full access to the plugin
@@ -47,8 +52,17 @@ permissions:
     children:
       gates.command.reload: true
       gates.command.version: true
+      gates.command.setowner: true
+      gates.command.setgroup: true
+      gates.command.setredstone: true
   gates.command.reload:
     description: Grant access to reload the plugin using the /gates command
   gates.command.version:
     description: Grant access to display the version of the plugin using the /gates command
     default: true
+  gates.command.setowner:
+    description: Grant access to set the owner of a gate using the /gates command
+  gates.command.setgroup:
+    description: Grant access to set the group of a gate using the /gates command
+  gates.command.setredstone:
+    description: Grant access to set the redstone state of a gate using the /gates command
